@@ -11,27 +11,21 @@ Gratis, dan dikelola lewat akun Google biasa.
 ## Isi folder
 | File | Fungsi |
 |------|--------|
-| `Code.gs` | Backend: routing web app + semua fungsi `apiXxx` + akses Sheets |
-| `Styles.html` | CSS + helper JS bersama |
-| `Home.html` | Halaman beranda (link kitchen/kasir/admin) |
-| `Menu.html` | Menu pelanggan (scan QR meja) |
-| `Order.html` | Status pesanan + QRIS / info bayar kasir |
-| `Kitchen.html` | Layar dapur per station |
-| `Print.html` | Cetak 1 dokumen → 3 struk station |
-| `Cashier.html` | Kasir: konfirmasi bayar, tutup bill |
-| `Admin.html` | Kelola meja + QR, kelola menu |
-| `appsscript.json` | Manifest (timezone, akses web app) |
+| `Code.gs` | **SATU file berisi semua** — backend + semua halaman (Menu, Order, Kitchen, Print, Cashier, Admin) sudah digabung di dalamnya |
+| `appsscript.json` | Manifest (timezone, akses web app) — **opsional** |
+
+> ✅ **Cukup tempel 1 file (`Code.gs`).** Tidak perlu lagi membuat file HTML
+> satu per satu — semua halaman sudah ada di dalam `Code.gs`.
 
 ## Cara deploy (langkah demi langkah)
 
 1. **Buat Spreadsheet baru** di Google Drive (beri nama mis. "FNB DB").
 2. Menu **Extensions → Apps Script**. Editor Apps Script terbuka.
-3. **Salin semua file** dari folder `gas/` ke project Apps Script:
-   - Buat file `Code.gs` → tempel isi `Code.gs`.
-   - Untuk tiap `*.html`: **+ → HTML**, beri nama **persis** (mis. `Menu`,
-     `Styles`, `Home`, `Order`, `Kitchen`, `Print`, `Cashier`, `Admin`),
-     lalu tempel isinya.
-   - (Opsional) Aktifkan manifest: **Project Settings → centang "Show
+3. **Tempel 1 file saja:**
+   - Di editor sudah ada file `Code.gs` (atau `Code`). **Hapus seluruh isi
+     bawaannya**, lalu **tempel SELURUH isi `gas/Code.gs`** dari repo ini.
+   - Klik **Simpan** (ikon disket / Ctrl+S). Selesai — tidak ada file lain.
+   - (Opsional) Untuk set timezone: **Project Settings → centang "Show
      appsscript.json"**, lalu tempel isi `appsscript.json`.
 4. Di editor, pilih fungsi **`setup`** lalu klik **Run**. Pertama kali akan
    diminta **otorisasi** — izinkan. Ini membuat tab + data contoh (3 station,
