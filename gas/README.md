@@ -45,11 +45,24 @@ Edit di tab **Config** pada Spreadsheet:
 |-----|--------|------|
 | `merchant_name` | Restoran Saya | nama yang tampil di menu & struk |
 | `tax_percent` | 10 | persen pajak (0 = tanpa pajak) |
-| `qris_static` | (kode QRIS) | (opsional) payload QRIS statis merchant kamu |
+| `qris_static` | `00020101...6304XXXX` | payload QRIS statis merchant (lihat di bawah) |
+| `staff_pin` | 1234 | PIN untuk buka Admin/Kasir/Dapur (kosong = tanpa PIN) |
+| `web_app_url` | `https://script.google.com/macros/s/AKfyc.../exec` | URL `/exec` publik; semua QR memakai URL ini |
 
-Jika `qris_static` diisi dengan **kode QRIS statis** dari penyedia
-(GoPay/Dana/dll), halaman pembayaran akan menampilkan QR itu. Jika kosong,
-ditampilkan QR contoh (mock) untuk uji coba.
+### QRIS otomatis isi nominal (dinamis)
+Isi `qris_static` dengan **payload QRIS statis** merchant (string panjang diawali
+`0002...`). Cara mendapatkannya: scan/baca QRIS cetak merchant kamu dengan
+aplikasi pembaca QR, salin **teks**-nya. Sistem akan otomatis mengubahnya jadi
+**QRIS dinamis** — nominalnya **terisi otomatis sesuai total pesanan** (pelanggan
+tidak perlu ketik nominal). CRC dihitung ulang otomatis. Jika `qris_static`
+kosong, ditampilkan QR contoh (mock) untuk uji coba.
+
+### Kunci PIN staf
+Isi `staff_pin` (mis. `1234`). Setelah itu halaman **Admin, Kasir, Dapur** minta
+PIN sebelum bisa dibuka; **menu pelanggan tetap bebas tanpa PIN**. PIN disimpan
+per-sesi browser (tidak ditanya berulang). Kosongkan `staff_pin` untuk
+menonaktifkan. Catatan: ini gerbang tingkat-halaman untuk mencegah pelanggan
+iseng membuka `?page=admin`; bukan pengamanan tingkat-perusahaan.
 
 ## Cara kerja routing 1 printer → 3 station
 Tiap menu punya `station_id` (Shaokao / Maincourse / Bar), atau diwarisi dari
