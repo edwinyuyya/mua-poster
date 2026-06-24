@@ -324,7 +324,7 @@ function apiGetCashier(mode) {
 // ----- Admin -----
 function apiGetAdmin() {
   return {
-    baseUrl: getBaseUrl_(),
+    baseUrl: (getConfig_().web_app_url || getBaseUrl_()),
     config: getConfig_(),
     stations: readObjects_('Stations').sort(bySort_).map(function (s) { return { id: s.id, name: s.name }; }),
     tables: readObjects_('Tables').map(function (t) {
