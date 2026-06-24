@@ -64,6 +64,14 @@ per-sesi browser (tidak ditanya berulang). Kosongkan `staff_pin` untuk
 menonaktifkan. Catatan: ini gerbang tingkat-halaman untuk mencegah pelanggan
 iseng membuka `?page=admin`; bukan pengamanan tingkat-perusahaan.
 
+## Impor menu BBQIU (79 item)
+Menu BBQIU sudah tertanam di kode. Untuk memasukkannya ke Spreadsheet:
+di editor Apps Script, pilih fungsi **`importMenuBBQIU`** lalu **Run** (sekali).
+Ini **mengganti** isi tab `Categories` & `MenuItems` dengan 8 kategori + 79 menu
+(Sate 3.900/6.900/Spesial/Premium → station Shao Kao; Daging Premium, Grill &
+Suki, Steamboat, Nasi & Snack → station Maincourse). Belum ada minuman —
+tambahkan sendiri lewat **Admin** (station Bar).
+
 ## Cara kerja routing 1 printer → 3 station
 Tiap menu punya `station_id` (Shaokao / Maincourse / Bar), atau diwarisi dari
 kategori. Saat order dibuat, tiap item menyimpan station-nya. Halaman **Print**
