@@ -62,6 +62,19 @@ mengelompokkan item per station menjadi **struk terpisah dalam satu dokumen**
 QR berisi: `<WEB_APP_URL>?page=menu&token=<token meja>`. Saat dipindai,
 pelanggan langsung masuk ke menu meja tersebut. Cetak QR dari halaman **Admin**.
 
+## ⚠️ Penting: QR & "tidak bisa membuka file"
+Web app Apps Script **diblokir Google saat dibuka di in-app browser / webview**
+(browser internal di app QR scanner, atau kamera bawaan sebagian HP
+Xiaomi/Oppo/Vivo/Samsung). Gejalanya: link **berhasil bila diketik di Chrome**,
+tapi **gagal "tidak bisa membuka file" bila discan**.
+
+Ini **batasan Google**, bukan bug kode — halaman Google-nya error sebelum kode
+kita jalan, jadi tidak bisa diperbaiki dari sisi aplikasi. Solusi:
+- Pelanggan: **scan lalu buka di Chrome/Safari** (ketuk titik tiga → *Buka di
+  browser*). Kartu QR yang dicetak sudah memuat petunjuk ini.
+- Solusi tuntas (tanpa kendala webview): pakai versi **Next.js + Supabase**
+  (folder `app/`) yang halamannya domain biasa dan bisa discan semua HP.
+
 ## Batasan & catatan
 - Cetak memakai **dialog cetak browser** (bukan langsung ke thermal ESC/POS).
   Untuk printer thermal, arahkan printer default browser ke printer struk.
