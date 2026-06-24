@@ -253,13 +253,14 @@ function apiCreateOrder(payload) {
       customer_name: String(payload.customer_name || '').slice(0, 80),
       note: String(payload.note || '').slice(0, 300), created_at: now, paid_at: '', closed_at: '',
     });
-    lines.forEach(function (l) {
-      append_('OrderItems', {
-        id: Utilities.getUuid(), order_id: orderId, menu_item_id: l.menu_item_id, name: l.name,
-        price: l.price, qty: l.qty, note: l.note, station_id: l.station_id,
-        kitchen_status: 'queued', created_at: now,
-      });
+    var oiHeaders = SHEETS['OrderItems'];
+    var oiSheet = getSheet_('OrderItems');
+    var oiRows = lines.map(function (l) {
+      var o = { id: Utilities.getUuid(), order_id: orderId, menu_item_id: l.menu_item_id, name: l.name,
+        price: l.price, qty: l.qty, note: l.note, station_id: l.station_id, kitchen_status: 'queued', created_at: now };
+      return oiHeaders.map(function (h) { return o[h] !== undefined ? o[h] : ''; });
     });
+    if (oiRows.length) oiSheet.getRange(oiSheet.getLastRow() + 1, 1, oiRows.length, oiHeaders.length).setValues(oiRows);
     return { ok: true, order_id: orderId, order_no: orderNo };
   } finally {
     lock.releaseLock();
