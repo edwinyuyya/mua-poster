@@ -6,6 +6,16 @@ Maincourse, Bar Minuman) dari **1 printer**.
 
 > Status: foundation / MVP — dibangun "sambil berjalan". Lihat **Roadmap** di bawah.
 
+## Dua versi tersedia
+| Versi | Folder | Backend | Cocok untuk |
+|-------|--------|---------|-------------|
+| **Next.js + Supabase** | root (`app/`) | Postgres (Supabase) | Deploy ke Vercel, butuh internet |
+| **Google Apps Script + Sheets** | [`gas/`](gas/README.md) | Google Spreadsheet (Drive) | Gratis, dikelola via akun Google, butuh internet |
+
+Dokumen di bawah ini untuk versi **Next.js + Supabase**. Untuk versi Google
+Apps Script (backend Google Sheets, storage Google Drive), lihat
+[`gas/README.md`](gas/README.md).
+
 ## Stack
 - Next.js 15 (App Router) + React 18
 - Supabase (Postgres)

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head><base target="_top"><?!= include('Styles'); ?></head>
+<body>
+<script>
+  var BASE_URL = <?!= JSON.stringify(baseUrl) ?>;
+  var PARAMS = <?!= JSON.stringify(params) ?>;
+  var CONFIG = <?!= JSON.stringify(config) ?>;
+</script>
+
+<div class="container-sm" id="app" style="padding-bottom:90px">
+  <p class="muted" style="padding-top:24px">Memuat menu…</p>
+</div>
+
+<script>
+var DATA = null;          // {table, categories, items, config}
+var CART = {};            // menuId -> qty
+var NOTES = {};           // menuId -> note
+var showCart = false;
+var payment = 'qris';
+var submitting = false;
+
+var token = PARAMS.token || '';
+
+call('apiGetMenu', token).then(function(res){
+  if(res.error){ document.getElementById('app').innerHTML =
+    '<div class="card" style="margin-top:40px"><h1 class="title">QR tidak valid</h1><p class="muted">'+esc(res.error)+'</p></div>'; return; }
+  DATA = res;
+  render();
+}).catch(function(e){
+  document.getElementById('app').innerHTML='<div class="card" style="margin-top:40px"><p class="muted">Gagal memuat. '+esc(e.message||e)+'</p></div>';
+});
+
+function itemById(id){ return DATA.items.filter(function(i){return i.id===id;})[0]; }
+function cartLines(){
+  return Object.keys(CART).filter(function(id){return CART[id]>0;}).map(function(id){
+    return { item:itemById(id), qty:CART[id], note:NOTES[id]||'' };
+  }).filter(function(l){return l.item;});
+}
+function totals(){
+  var lines=cartLines();
+  var subtotal=lines.reduce(function(s,l){return s+l.item.price*l.qty;},0);
+  var taxPercent=Number((DATA.config||{}).tax_percent||0);
+  var tax=Math.round(subtotal*taxPercent/100);
+  return {subtotal:subtotal,tax:tax,total:subtotal+tax,taxPercent:taxPercent,
+    qty:lines.reduce(function(s,l){return s+l.qty;},0)};
+}
+function setQty(id,d){
+  var n=Math.max(0,(CART[id]||0)+d);
+  if(n===0) delete CART[id]; else CART[id]=n;
+  render();
+}
+
+function render(){
+  var t=totals();
+  var html='';
+  html+='<header style="padding:16px 0"><div class="muted small">'+esc(DATA.config.merchant_name||'Restoran')+'</div>'+
+        '<h1 class="title">Menu · Meja '+esc(DATA.table.table_number)+'</h1></header>';
+
+  var cats=DATA.categories.slice();
+  cats.forEach(function(c){
+    var its=DATA.items.filter(function(i){return i.category_id===c.id;});
+    if(!its.length) return;
+    html+='<section style="margin-bottom:18px"><h2 class="h2" style="margin-bottom:10px">'+esc(c.name)+'</h2><div class="col">';
+    its.forEach(function(it){ html+=itemCard(it); });
+    html+='</div></section>';
+  });
+  var unc=DATA.items.filter(function(i){return !cats.some(function(c){return c.id===i.category_id;});});
+  if(unc.length){ html+='<section style="margin-bottom:18px"><h2 class="h2">Lainnya</h2><div class="col">';
+    unc.forEach(function(it){html+=itemCard(it);}); html+='</div></section>'; }
+
+  if(t.qty>0 && !showCart){
+    html+='<div style="position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--bg);border-top:1px solid var(--line);padding:12px 16px">'+
+          '<button class="btn btn-brand btn-block" onclick="openCart()">Lihat Keranjang · '+t.qty+' item · '+rupiah(t.total)+'</button></div>';
+  }
+  document.getElementById('app').innerHTML=html;
+  if(showCart) renderCart();
+}
+
+function itemCard(it){
+  var q=CART[it.id]||0;
+  return '<div class="card"><div class="between"><div style="flex:1">'+
+    '<div class="bold">'+esc(it.name)+'</div>'+
+    (it.description?'<div class="muted small" style="margin-top:2px">'+esc(it.description)+'</div>':'')+
+    '<div style="margin-top:6px">'+rupiah(it.price)+'</div></div>'+
+    '<div class="qty">'+(q>0?'<button onclick="setQty(\''+it.id+'\',-1)">−</button><span class="bold">'+q+'</span>':'')+
+    '<button onclick="setQty(\''+it.id+'\',1)">+</button></div></div></div>';
+}
+
+function openCart(){ showCart=true; render(); }
+function closeCart(){ showCart=false; var o=document.getElementById('cartOverlay'); if(o) o.remove(); }
+
+function renderCart(){
+  var t=totals(); var lines=cartLines();
+  var el=document.createElement('div');
+  el.id='cartOverlay';
+  el.style='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:30;display:flex;align-items:flex-end';
+  el.onclick=function(e){ if(e.target===el) closeCart(); };
+  var inner='<div class="container-sm" style="background:var(--bg);border-top-left-radius:18px;border-top-right-radius:18px;max-height:88vh;overflow-y:auto;width:100%;padding-bottom:24px" onclick="event.stopPropagation()">';
+  inner+='<div class="between" style="padding:16px 0"><h2 class="h2">Keranjang · Meja '+esc(DATA.table.table_number)+'</h2>'+
+         '<button class="btn" onclick="closeCart()">Tutup</button></div><div class="col">';
+  lines.forEach(function(l){
+    inner+='<div class="card"><div class="between"><div class="bold">'+esc(l.item.name)+'</div>'+
+      '<div class="qty"><button onclick="setQty(\''+l.item.id+'\',-1)">−</button><span class="bold">'+l.qty+'</span>'+
+      '<button onclick="setQty(\''+l.item.id+'\',1)">+</button></div></div>'+
+      '<div class="between" style="margin-top:6px"><span class="muted small">'+rupiah(l.item.price)+' × '+l.qty+'</span>'+
+      '<span class="bold">'+rupiah(l.item.price*l.qty)+'</span></div>'+
+      '<input class="input" style="margin-top:8px" placeholder="Catatan (mis. tidak pedas)" value="'+esc(l.note)+'" '+
+      'oninput="NOTES[\''+l.item.id+'\']=this.value"></div>';
+  });
+  inner+='</div>';
+  inner+='<div class="card" style="margin-top:12px"><input id="custName" class="input" placeholder="Nama (opsional)">'+
+         '<textarea id="orderNote" class="textarea" style="margin-top:8px" placeholder="Catatan untuk seluruh pesanan (opsional)"></textarea></div>';
+  inner+='<div class="card" style="margin-top:12px"><div class="between"><span class="muted">Subtotal</span><span>'+rupiah(t.subtotal)+'</span></div>';
+  if(t.taxPercent>0) inner+='<div class="between" style="margin-top:6px"><span class="muted">Pajak '+t.taxPercent+'%</span><span>'+rupiah(t.tax)+'</span></div>';
+  inner+='<hr class="hr"><div class="between"><span class="bold">Total</span><span class="bold">'+rupiah(t.total)+'</span></div></div>';
+  inner+='<div class="card" style="margin-top:12px"><div class="h2" style="margin-bottom:10px">Metode Pembayaran</div><div class="col">'+
+    '<label class="btn '+(payment==='qris'?'btn-brand':'')+'" style="justify-content:flex-start"><input type="radio" name="pay" '+(payment==='qris'?'checked':'')+' onchange="setPay(\'qris\')">&nbsp;Bayar sekarang via QRIS</label>'+
+    '<label class="btn '+(payment==='cashier'?'btn-brand':'')+'" style="justify-content:flex-start"><input type="radio" name="pay" '+(payment==='cashier'?'checked':'')+' onchange="setPay(\'cashier\')">&nbsp;Bayar di kasir</label>'+
+    '</div></div>';
+  inner+='<div id="cartErr"></div>';
+  inner+='<button class="btn btn-green btn-block" style="margin-top:14px" id="submitBtn" onclick="submitOrder()">Pesan Sekarang · '+rupiah(t.total)+'</button>';
+  inner+='</div>';
+  el.innerHTML=inner;
+  document.body.appendChild(el);
+}
+
+function setPay(p){ payment=p; var o=document.getElementById('cartOverlay'); if(o){o.remove();renderCart();} }
+
+function submitOrder(){
+  if(submitting) return;
+  var lines=cartLines();
+  if(!lines.length){ document.getElementById('cartErr').innerHTML='<div class="card" style="margin-top:12px;border-color:var(--red)"><span style="color:#ff8585">Keranjang kosong.</span></div>'; return; }
+  submitting=true;
+  var btn=document.getElementById('submitBtn'); btn.disabled=true; btn.textContent='Memproses…';
+  var payload={ token:token, payment_method:payment,
+    customer_name:(document.getElementById('custName')||{}).value||'',
+    note:(document.getElementById('orderNote')||{}).value||'',
+    items:lines.map(function(l){return {menu_item_id:l.item.id,qty:l.qty,note:l.note};}) };
+  call('apiCreateOrder', payload).then(function(res){
+    if(res.error){ submitting=false; btn.disabled=false; btn.textContent='Pesan Sekarang';
+      document.getElementById('cartErr').innerHTML='<div class="card" style="margin-top:12px;border-color:var(--red)"><span style="color:#ff8585">'+esc(res.error)+'</span></div>'; return; }
+    go('order', {id:res.order_id});
+  }).catch(function(e){ submitting=false; btn.disabled=false; btn.textContent='Pesan Sekarang';
+    document.getElementById('cartErr').innerHTML='<div class="card" style="margin-top:12px;border-color:var(--red)"><span style="color:#ff8585">'+esc(e.message||e)+'</span></div>'; });
+}
+</script>
+</body>
+</html>

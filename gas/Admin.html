@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head><base target="_top"><?!= include('Styles'); ?></head>
+<body>
+<script>
+  var BASE_URL = <?!= JSON.stringify(baseUrl) ?>;
+  var CONFIG = <?!= JSON.stringify(config) ?>;
+</script>
+
+<div class="container">
+  <div class="between" style="padding:16px 0">
+    <div><h1 class="title">⚙️ Admin</h1><p class="muted small">Kelola meja, QR, dan menu</p></div>
+    <button class="btn" onclick="go('home')">← Beranda</button>
+  </div>
+  <div class="row" style="margin-bottom:14px">
+    <button class="btn" id="tabTables" onclick="setTab('tables')">Meja &amp; QR</button>
+    <button class="btn" id="tabMenu" onclick="setTab('menu')">Menu</button>
+  </div>
+  <div id="content"><p class="muted">Memuat…</p></div>
+</div>
+
+<script>
+var TAB='tables', D=null;
+function setTab(t){ TAB=t; styleTabs(); render(); }
+function styleTabs(){
+  document.getElementById('tabTables').className='btn '+(TAB==='tables'?'btn-brand':'');
+  document.getElementById('tabMenu').className='btn '+(TAB==='menu'?'btn-brand':'');
+}
+function load(){ return call('apiGetAdmin').then(function(res){ D=res; render(); }); }
+styleTabs(); load();
+
+function qrImg(token){
+  var link=(D.baseUrl||BASE_URL)+'?page=menu&token='+encodeURIComponent(token);
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(link);
+}
+function menuLink(token){ return (D.baseUrl||BASE_URL)+'?page=menu&token='+encodeURIComponent(token); }
+
+function render(){
+  if(!D){ return; }
+  if(TAB==='tables') renderTables(); else renderMenu();
+}
+
+function renderTables(){
+  var h='<div class="col"><div class="card"><div class="h2" style="margin-bottom:10px">Tambah Meja</div>'+
+    '<div class="row"><input class="input" id="newTable" placeholder="Nomor / nama meja (mis. 12)">'+
+    '<button class="btn btn-brand" onclick="addTable()">Tambah</button></div></div>';
+  h+='<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">';
+  D.tables.forEach(function(t){
+    h+='<div class="card" style="text-align:center"><div class="between"><span class="bold">Meja '+esc(t.table_number)+'</span>'+
+       '<span class="badge '+(t.active?'badge-green':'badge-red')+'">'+(t.active?'Aktif':'Nonaktif')+'</span></div>'+
+       '<img src="'+qrImg(t.token)+'" alt="QR" style="width:180px;height:180px;margin:10px auto;background:#fff;border-radius:10px;padding:6px">'+
+       '<div class="muted small" style="word-break:break-all">'+esc(menuLink(t.token))+'</div>'+
+       '<div class="row no-print" style="margin-top:10px;justify-content:center;flex-wrap:wrap">'+
+       '<button class="btn" style="padding:6px 10px;font-size:13px" onclick="printQr(\''+t.token+'\',\''+esc(t.table_number)+'\')">Cetak QR</button>'+
+       '<button class="btn" style="padding:6px 10px;font-size:13px" onclick="call(\'apiToggleTable\',\''+t.id+'\').then(function(r){D=r;render();})">'+(t.active?'Nonaktif':'Aktif')+'</button>'+
+       '<button class="btn" style="padding:6px 10px;font-size:13px" onclick="delTable(\''+t.id+'\',\''+esc(t.table_number)+'\')">Hapus</button></div></div>';
+  });
+  h+='</div></div>';
+  document.getElementById('content').innerHTML=h;
+}
+
+function addTable(){
+  var v=document.getElementById('newTable').value;
+  if(!v.trim()) return;
+  call('apiAddTable', v).then(function(r){ D=r; render(); });
+}
+function delTable(id,num){ if(confirm('Hapus meja '+num+'?')) call('apiDeleteTable',id).then(function(r){D=r;render();}); }
+
+function printQr(token,num){
+  var link=menuLink(token);
+  var w=window.open('','_blank');
+  w.document.write('<html><head><title>QR Meja '+num+'</title></head><body style="font-family:system-ui;text-align:center;padding:24px">'+
+    '<h2>'+esc(CONFIG.merchant_name||'Restoran')+'</h2><div style="font-size:28px;font-weight:800">MEJA '+esc(num)+'</div>'+
+    '<p>Scan untuk lihat menu &amp; pesan</p>'+
+    '<img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(link)+'" style="width:300px;height:300px">'+
+    '<p style="font-size:11px;word-break:break-all">'+esc(link)+'</p>'+
+    '<button onclick="window.print()" style="padding:10px 16px;margin-top:12px">Cetak</button></body></html>');
+  w.document.close();
+}
+
+function renderMenu(){
+  var catOpts='<option value="">— Kategori —</option>'+D.categories.map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join('');
+  var stOpts=D.stations.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+'</option>';}).join('');
+  var h='<div class="col"><div class="card"><div class="h2" style="margin-bottom:10px">Tambah Menu</div>'+
+    '<div class="grid" style="grid-template-columns:1fr 1fr">'+
+    '<input class="input" id="mName" placeholder="Nama menu">'+
+    '<input class="input" id="mPrice" type="number" placeholder="Harga">'+
+    '<select class="select" id="mCat">'+catOpts+'</select>'+
+    '<select class="select" id="mStation"><option value="">Station: ikut kategori</option>'+stOpts+'</select></div>'+
+    '<input class="input" id="mDesc" style="margin-top:10px" placeholder="Deskripsi (opsional)">'+
+    '<button class="btn btn-brand" style="margin-top:10px" onclick="addMenu()">Tambah Menu</button></div>';
+  h+='<div class="col">';
+  D.items.forEach(function(it){
+    var sel=D.stations.map(function(s){return '<option value="'+s.id+'" '+(it.station_id===s.id?'selected':'')+'>'+esc(s.name)+'</option>';}).join('');
+    h+='<div class="card"><div class="between"><div><span class="bold">'+esc(it.name)+'</span> · '+rupiah(it.price)+
+       (it.description?'<div class="muted small">'+esc(it.description)+'</div>':'')+'</div>'+
+       '<span class="badge '+(it.available?'badge-green':'badge-red')+'">'+(it.available?'Tersedia':'Habis')+'</span></div>'+
+       '<div class="row no-print" style="margin-top:10px;flex-wrap:wrap">'+
+       '<select class="select" style="width:auto" onchange="call(\'apiSetItemStation\',\''+it.id+'\',this.value).then(function(r){D=r;render();})">'+
+       '<option value="">Tanpa station</option>'+sel+'</select>'+
+       '<button class="btn" style="padding:6px 10px;font-size:13px" onclick="call(\'apiToggleMenuItem\',\''+it.id+'\').then(function(r){D=r;render();})">'+(it.available?'Set habis':'Set tersedia')+'</button>'+
+       '<button class="btn" style="padding:6px 10px;font-size:13px" onclick="delMenu(\''+it.id+'\',\''+esc(it.name)+'\')">Hapus</button></div></div>';
+  });
+  h+='</div></div>';
+  document.getElementById('content').innerHTML=h;
+}
+
+function addMenu(){
+  var obj={ name:document.getElementById('mName').value, price:document.getElementById('mPrice').value,
+    category_id:document.getElementById('mCat').value, station_id:document.getElementById('mStation').value,
+    description:document.getElementById('mDesc').value };
+  if(!obj.name.trim()||!obj.price){ alert('Nama & harga wajib diisi'); return; }
+  call('apiAddMenuItem', obj).then(function(r){ if(r.error){alert(r.error);return;} D=r; render(); });
+}
+function delMenu(id,name){ if(confirm('Hapus '+name+'?')) call('apiDeleteMenuItem',id).then(function(r){D=r;render();}); }
+</script>
+</body>
+</html>

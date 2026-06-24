@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head><base target="_top"><?!= include('Styles'); ?></head>
+<body>
+<script>
+  var BASE_URL = <?!= JSON.stringify(baseUrl) ?>;
+  var CONFIG = <?!= JSON.stringify(config) ?>;
+</script>
+<div class="container">
+  <div style="padding:24px 0">
+    <h1 class="title">F&amp;B Order System</h1>
+    <p class="muted">Order via QR di meja · bayar QRIS / kasir · cetak dapur ke 3 station · backend Google Sheets</p>
+  </div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+    <a class="card" onclick="go('kitchen')" style="cursor:pointer">
+      <div class="h2">🍳 Kitchen Display</div>
+      <p class="muted small">Tiket per station + cetak 1 printer untuk 3 station.</p>
+    </a>
+    <a class="card" onclick="go('cashier')" style="cursor:pointer">
+      <div class="h2">💵 Kasir</div>
+      <p class="muted small">Konfirmasi pembayaran &amp; tutup bill.</p>
+    </a>
+    <a class="card" onclick="go('admin')" style="cursor:pointer">
+      <div class="h2">⚙️ Admin</div>
+      <p class="muted small">Kelola menu, meja, &amp; cetak QR meja.</p>
+    </a>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="h2">Alur singkat</div>
+    <ol class="muted small" style="line-height:1.8">
+      <li>Pelanggan scan QR di meja → buka menu → pesan.</li>
+      <li>Pilih bayar <b>QRIS</b> atau <b>bayar di kasir</b>.</li>
+      <li>Pesanan dirouting otomatis &amp; dicetak ke station sesuai.</li>
+      <li>Kasir menutup bill saat selesai.</li>
+    </ol>
+    <p class="small muted">Belum ada data? Jalankan fungsi <b>setup</b> di editor Apps Script, lalu deploy ulang.</p>
+  </div>
+</div>
+</body>
+</html>
