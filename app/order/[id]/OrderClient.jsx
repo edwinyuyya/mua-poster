@@ -14,7 +14,7 @@ const STATUS_LABEL = {
   cancelled: 'Dibatalkan',
 };
 
-export default function OrderClient({ initialOrder, items, qrDataUrl, merchant }) {
+export default function OrderClient({ initialOrder, items, qrDataUrl, qrisDynamic, merchant }) {
   const [order, setOrder] = useState(initialOrder);
   const [confirming, setConfirming] = useState(false);
 
@@ -52,8 +52,13 @@ export default function OrderClient({ initialOrder, items, qrDataUrl, merchant }
   }
 
   return (
-    <div className="container-sm" style={{ paddingTop: 16, paddingBottom: 40 }}>
-      <div className="muted small">{merchant}</div>
+    <div className="cust-page">
+    <div className="container-sm" style={{ paddingTop: 8, paddingBottom: 40 }}>
+      <div className="brand-hero" style={{ paddingBottom: 0 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="brand-logo" src="/bbqiu-logo.png" alt="BBQIU" />
+      </div>
+      <div className="muted small" style={{ marginTop: 8 }}>{merchant}</div>
       <h1 className="title">Pesanan #{order.order_no}</h1>
       <div className="row" style={{ marginTop: 6 }}>
         <span className="badge">Meja {order.table_number}</span>
@@ -75,6 +80,7 @@ export default function OrderClient({ initialOrder, items, qrDataUrl, merchant }
           )}
           <div className="bold" style={{ fontSize: 20 }}>{rupiah(order.total)}</div>
           <p className="muted small" style={{ marginTop: 8 }}>
+            {qrisDynamic ? `Nominal ${rupiah(order.total)} sudah otomatis di QR. ` : ''}
             Setelah membayar, tekan tombol di bawah untuk konfirmasi.
           </p>
           <button
@@ -131,6 +137,7 @@ export default function OrderClient({ initialOrder, items, qrDataUrl, merchant }
         <hr className="hr" />
         <div className="between"><span className="bold">Total</span><span className="bold">{rupiah(order.total)}</span></div>
       </div>
+    </div>
     </div>
   );
 }

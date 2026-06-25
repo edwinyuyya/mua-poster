@@ -89,8 +89,20 @@ export default function MenuClient({ token, table, categories, items, taxPercent
   }
 
   return (
+    <div className="cust-page">
     <div className="container-sm" style={{ paddingBottom: 90 }}>
-      <header style={{ padding: '16px 0' }}>
+      <div className="brand-hero">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="brand-logo" src="/bbqiu-logo.png" alt="BBQIU" />
+        <div className="brand-tagline">Grill · Suki · Shao Kao</div>
+        <div className="food-strip">
+          <span className="food-chip"><span className="ic">🍢</span>Shao Kao</span>
+          <span className="food-chip"><span className="ic">🍲</span>Steamboat</span>
+          <span className="food-chip"><span className="ic">🥩</span>Grill Daging</span>
+        </div>
+        <div className="brand-divider" />
+      </div>
+      <header style={{ padding: '4px 0 12px' }}>
         <div className="muted small">{merchant}</div>
         <h1 className="title">Menu · Meja {table.table_number}</h1>
       </header>
@@ -251,6 +263,7 @@ export default function MenuClient({ token, table, categories, items, taxPercent
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

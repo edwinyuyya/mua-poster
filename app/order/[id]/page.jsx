@@ -1,5 +1,6 @@
 import QRCode from 'qrcode';
 import { supabaseServer } from '../../../lib/supabaseServer';
+import { buildDynamicQris } from '../../../lib/qris';
 import OrderClient from './OrderClient';
 
 export const dynamic = 'force-dynamic';
@@ -26,12 +27,19 @@ export default async function OrderPage({ params }) {
     .eq('order_id', id)
     .order('created_at', { ascending: true });
 
-  // Generate QRIS untuk pembayaran (statis dari env, atau payload mock)
+  // Generate QRIS untuk pembayaran. Jika ada payload statis merchant,
+  // ubah jadi DINAMIS (nominal = total order). Jika tidak, pakai mock.
   let qrDataUrl = null;
+  let qrisDynamic = false;
   if (order.payment_method === 'qris') {
-    const payload =
-      process.env.NEXT_PUBLIC_QRIS_STATIC ||
-      `QRIS|MERCHANT:${process.env.NEXT_PUBLIC_MERCHANT_NAME || 'Restoran'}|ORDER:${order.order_no}|AMOUNT:${order.total}`;
+    const staticQris = process.env.NEXT_PUBLIC_QRIS_STATIC;
+    let payload;
+    if (staticQris) {
+      payload = buildDynamicQris(staticQris, order.total);
+      qrisDynamic = true;
+    } else {
+      payload = `QRIS|MERCHANT:${process.env.NEXT_PUBLIC_MERCHANT_NAME || 'Restoran'}|ORDER:${order.order_no}|AMOUNT:${order.total}`;
+    }
     qrDataUrl = await QRCode.toDataURL(payload, { width: 280, margin: 1 });
   }
 
@@ -40,6 +48,7 @@ export default async function OrderPage({ params }) {
       initialOrder={order}
       items={items || []}
       qrDataUrl={qrDataUrl}
+      qrisDynamic={qrisDynamic}
       merchant={process.env.NEXT_PUBLIC_MERCHANT_NAME || 'Restoran'}
     />
   );

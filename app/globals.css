@@ -107,3 +107,44 @@ a { color: inherit; text-decoration: none; }
 .ticket .line { border-top: 1px dashed #000; margin: 6px 0; }
 .ticket .item { display: flex; justify-content: space-between; }
 .cut { text-align: center; color: #888; font-size: 11px; margin: 4px 0; }
+
+/* ===== Tema pelanggan (copper oriental) ===== */
+.cust-page {
+  position: relative;
+  min-height: 100vh;
+  color: #f6e7d6;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(212,175,55,.20), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(0,0,0,.05) 0 14px, transparent 14px 28px),
+    linear-gradient(160deg,#2e1409 0%,#5a2e18 32%,#8a4a26 64%,#b5703f 100%);
+  background-attachment: fixed;
+}
+.cust-page::before {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: url('/bbqiu-logo.png') center 42% / 78% no-repeat; opacity: .05;
+}
+.cust-page > * { position: relative; z-index: 1; }
+.cust-page .card { background: rgba(34,18,10,.74); border: 1px solid rgba(212,175,55,.35);
+  box-shadow: 0 6px 20px rgba(0,0,0,.35); color: #f6e7d6; }
+.cust-page .muted { color: #d8c3a8; }
+.cust-page .title, .cust-page .h2, .cust-page .bold { color: #fff; }
+.cust-page .btn { background: rgba(255,255,255,.08); border-color: rgba(212,175,55,.4); color: #f6e7d6; }
+.cust-page .btn-brand { background: linear-gradient(135deg,#c0392b,#e0552c); border-color: #c0392b; color: #fff; }
+.cust-page .btn-green { background: linear-gradient(135deg,#1f9d57,#28c46b); border-color: #28c46b; color: #04210f; }
+.cust-page .input, .cust-page .textarea, .cust-page .select { background: rgba(0,0,0,.3); border-color: rgba(212,175,55,.35); color: #fff; }
+.cust-page .hr { background: rgba(212,175,55,.28); }
+.cust-page .badge { background: rgba(0,0,0,.3); border-color: rgba(212,175,55,.35); color: #f6e7d6; }
+.cust-page .qty button { background: rgba(0,0,0,.3); border-color: rgba(212,175,55,.4); color: #fff; }
+.cust-page .sticky-bottom { background: transparent; border: 0; }
+
+.brand-hero { text-align: center; padding: 22px 16px 6px; }
+.brand-logo { display: block; width: 230px; max-width: 74%; height: 120px; margin: 0 auto;
+  object-fit: contain; background: #fff; border-radius: 16px; padding: 12px;
+  box-shadow: 0 8px 26px rgba(0,0,0,.42); }
+.brand-tagline { margin-top: 12px; font-size: 13px; letter-spacing: 3px; color: #f0d9a8; font-weight: 800; text-transform: uppercase; }
+.food-strip { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 14px 0 4px; }
+.food-chip { background: rgba(0,0,0,.34); border: 1px solid rgba(212,175,55,.45); border-radius: 999px;
+  padding: 7px 14px; font-size: 13px; font-weight: 700; color: #ffe9c7; display: flex; align-items: center; gap: 6px; }
+.food-chip .ic { font-size: 18px; }
+.brand-divider { height: 3px; width: 90px; margin: 14px auto 2px; border-radius: 3px;
+  background: linear-gradient(90deg,transparent,#d4af37,transparent); }
