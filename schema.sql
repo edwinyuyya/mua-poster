@@ -166,8 +166,12 @@ create table if not exists inventory_items (
   cost_price  numeric default 0,          -- harga beli per satuan
   supplier    text,
   barcode     text,                        -- opsional (untuk scan)
+  expiry_date date,                         -- tanggal kadaluarsa (batch terdekat)
   created_at  timestamptz default now()
 );
+
+-- untuk database yang sudah ada (jalankan ulang aman):
+alter table inventory_items add column if not exists expiry_date date;
 
 create table if not exists stock_movements (
   id          uuid default gen_random_uuid() primary key,

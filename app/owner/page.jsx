@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import PinGate from '../components/PinGate';
+import AlertsPanel from '../components/AlertsPanel';
 
 function rupiah(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); }
 
@@ -53,6 +54,8 @@ function OwnerInner() {
         <button className={`btn ${range === 'today' ? 'btn-brand' : ''}`} onClick={() => setRange('today')}>Hari ini</button>
         <button className={`btn ${range === '7d' ? 'btn-brand' : ''}`} onClick={() => setRange('7d')}>7 hari</button>
       </div>
+
+      <AlertsPanel />
 
       {loading && <p className="muted">Memuat…</p>}
       {data && (

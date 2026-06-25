@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import PinGate from '../components/PinGate';
+import AlertsPanel from '../components/AlertsPanel';
 
 function rupiah(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
@@ -48,6 +49,8 @@ function AdminPage() {
         </div>
         <Link href="/" className="btn">← Beranda</Link>
       </div>
+
+      <AlertsPanel />
 
       <div className="row" style={{ marginBottom: 14 }}>
         <button className={`btn ${tab === 'tables' ? 'btn-brand' : ''}`} onClick={() => setTab('tables')}>Meja &amp; QR</button>

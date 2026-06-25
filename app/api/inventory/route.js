@@ -31,6 +31,7 @@ export async function POST(req) {
       cost_price: Number(b.cost_price) || 0,
       supplier: b.supplier || null,
       barcode: b.barcode ? String(b.barcode).trim() : null,
+      expiry_date: b.expiry_date || null,
     })
     .select()
     .single();

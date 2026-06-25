@@ -52,6 +52,7 @@ function StokInner() {
 function Receive({ items, reload }) {
   const [q, setQ] = useState('');
   const [cart, setCart] = useState({}); // id -> qty
+  const [exp, setExp] = useState({});   // id -> tanggal kadaluarsa (opsional)
   const [scan, setScan] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -82,9 +83,9 @@ function Receive({ items, reload }) {
   async function save() {
     if (!lines.length) return;
     setSaving(true);
-    const payload = { action: 'receive', items: lines.map(([id, qty]) => ({ item_id: id, qty })) };
+    const payload = { action: 'receive', items: lines.map(([id, qty]) => ({ item_id: id, qty, expiry_date: exp[id] || undefined })) };
     const r = await fetch('/api/stock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (r.ok) { setCart({}); setMsg('Stok diperbarui ✓'); await reload(); setTimeout(() => setMsg(''), 2000); }
+    if (r.ok) { setCart({}); setExp({}); setMsg('Stok diperbarui ✓'); await reload(); setTimeout(() => setMsg(''), 2000); }
     setSaving(false);
   }
 
@@ -115,7 +116,16 @@ function Receive({ items, reload }) {
                   value={inCart || ''} onChange={(e) => setQty(it.id, e.target.value)} />
                 {inCart > 0 && <button className="btn" onClick={() => add(it.id, -1)}>−</button>}
               </div>
-              {inCart > 0 && <div className="small bold" style={{ color: '#5ee996', marginTop: 6 }}>Akan ditambah: +{inCart} {it.unit}</div>}
+              {inCart > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <div className="small bold" style={{ color: '#5ee996' }}>Akan ditambah: +{inCart} {it.unit}</div>
+                  <div className="row" style={{ alignItems: 'center', marginTop: 6 }}>
+                    <span className="muted small">Kadaluarsa:</span>
+                    <input className="input" type="date" style={{ width: 'auto' }}
+                      value={exp[it.id] || ''} onChange={(e) => setExp((x) => ({ ...x, [it.id]: e.target.value }))} />
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -188,7 +198,7 @@ function EditModal({ item, onClose, reload }) {
     setBusy(true);
     await fetch(`/api/inventory/${item.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: f.name, unit: f.unit, category: f.category, min_stock: f.min_stock, cost_price: f.cost_price, supplier: f.supplier, barcode: f.barcode }),
+      body: JSON.stringify({ name: f.name, unit: f.unit, category: f.category, min_stock: f.min_stock, cost_price: f.cost_price, supplier: f.supplier, barcode: f.barcode, expiry_date: f.expiry_date || '' }),
     });
     await reload(); setBusy(false); onClose();
   }
@@ -208,6 +218,7 @@ function EditModal({ item, onClose, reload }) {
           </div>
           <input className="input" placeholder="Supplier" value={f.supplier || ''} onChange={(e) => setF({ ...f, supplier: e.target.value })} />
           <input className="input" placeholder="Barcode (opsional)" value={f.barcode || ''} onChange={(e) => setF({ ...f, barcode: e.target.value })} />
+          <label className="muted small">Tanggal kadaluarsa<input className="input" type="date" value={f.expiry_date ? String(f.expiry_date).slice(0, 10) : ''} onChange={(e) => setF({ ...f, expiry_date: e.target.value })} /></label>
         </div>
         <div className="row" style={{ marginTop: 12 }}>
           <button className="btn btn-brand btn-block" disabled={busy} onClick={save}>Simpan</button>
@@ -220,7 +231,7 @@ function EditModal({ item, onClose, reload }) {
 
 /* ---------- Tambah Barang ---------- */
 function AddItem({ reload, onDone }) {
-  const [f, setF] = useState({ name: '', unit: 'pcs', category: '', stock_qty: '', min_stock: '', cost_price: '', supplier: '', barcode: '' });
+  const [f, setF] = useState({ name: '', unit: 'pcs', category: '', stock_qty: '', min_stock: '', cost_price: '', supplier: '', barcode: '', expiry_date: '' });
   const [busy, setBusy] = useState(false);
   const [scan, setScan] = useState(false);
   async function save() {
@@ -250,6 +261,9 @@ function AddItem({ reload, onDone }) {
           <input className="input" placeholder="Barcode (opsional)" value={f.barcode} onChange={(e) => setF({ ...f, barcode: e.target.value })} />
           <button className="btn" onClick={() => setScan(true)}>📷</button>
         </div>
+        <label className="muted small">Tanggal kadaluarsa (opsional)
+          <input className="input" type="date" value={f.expiry_date} onChange={(e) => setF({ ...f, expiry_date: e.target.value })} />
+        </label>
       </div>
       <button className="btn btn-brand btn-block" style={{ marginTop: 12 }} disabled={busy} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan Barang'}</button>
       {scan && <BarcodeScanner onDetected={(c) => { setF((x) => ({ ...x, barcode: c })); setScan(false); }} onClose={() => setScan(false)} />}

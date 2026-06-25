@@ -10,7 +10,7 @@ export async function PATCH(req, { params }) {
   let b;
   try { b = await req.json(); } catch { return NextResponse.json({ error: 'Body tidak valid' }, { status: 400 }); }
   const patch = {};
-  ['name', 'unit', 'category', 'supplier', 'barcode'].forEach((k) => {
+  ['name', 'unit', 'category', 'supplier', 'barcode', 'expiry_date'].forEach((k) => {
     if (b[k] !== undefined) patch[k] = b[k] === '' ? null : b[k];
   });
   ['min_stock', 'cost_price'].forEach((k) => {

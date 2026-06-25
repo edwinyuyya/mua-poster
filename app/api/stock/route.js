@@ -26,6 +26,7 @@ export async function POST(req) {
       moves.push({ item_id: r.item_id, type: 'in', qty, cost, note: b.note || 'Barang datang' });
       const patch = { stock_qty: Number(it.stock_qty || 0) + qty };
       if (r.cost_price !== undefined && r.cost_price !== '' && Number(r.cost_price) >= 0) patch.cost_price = Number(r.cost_price);
+      if (r.expiry_date) patch.expiry_date = r.expiry_date; // tanggal kadaluarsa batch ini
       await db.from('inventory_items').update(patch).eq('id', r.item_id);
     }
     if (moves.length) await db.from('stock_movements').insert(moves);
