@@ -152,3 +152,54 @@ insert into tables (table_number, token) values
   ('2',  'meja-2-' || substr(md5(random()::text),1,8)),
   ('VIP-1', 'meja-vip1-' || substr(md5(random()::text),1,8))
 on conflict (table_number) do nothing;
+
+-- ============================================================
+--  INVENTORY / STOK & BELANJA BARANG
+-- ============================================================
+create table if not exists inventory_items (
+  id          uuid default gen_random_uuid() primary key,
+  name        text not null,
+  unit        text default 'pcs',        -- satuan: pcs | kg | gram | pack | liter | ikat
+  category    text,                       -- mis. Daging, Sayur, Bumbu, Minuman
+  stock_qty   numeric default 0,
+  min_stock   numeric default 0,          -- ambang stok menipis
+  cost_price  numeric default 0,          -- harga beli per satuan
+  supplier    text,
+  barcode     text,                        -- opsional (untuk scan)
+  created_at  timestamptz default now()
+);
+
+create table if not exists stock_movements (
+  id          uuid default gen_random_uuid() primary key,
+  item_id     uuid references inventory_items(id) on delete cascade,
+  type        text default 'in',          -- in (barang datang) | out (pemakaian) | adjust (opname)
+  qty         numeric not null,
+  cost        numeric default 0,          -- nilai belanja (qty * harga beli) untuk tipe 'in'
+  note        text,
+  created_at  timestamptz default now()
+);
+
+create index if not exists idx_inv_barcode on inventory_items(barcode);
+create index if not exists idx_stockmov_item on stock_movements(item_id, created_at);
+create index if not exists idx_stockmov_date on stock_movements(created_at);
+
+alter table inventory_items enable row level security;
+alter table stock_movements enable row level security;
+do $$
+declare t text;
+begin
+  foreach t in array array['inventory_items','stock_movements']
+  loop
+    execute format('drop policy if exists "allow all %1$s" on %1$s;', t);
+    execute format('create policy "allow all %1$s" on %1$s for all using (true) with check (true);', t);
+  end loop;
+end $$;
+
+-- contoh barang (boleh dihapus)
+insert into inventory_items (name, unit, category, stock_qty, min_stock, cost_price, supplier) values
+  ('Daging Sapi Slice', 'kg', 'Daging', 0, 5, 120000, 'Supplier A'),
+  ('Ayam Fillet', 'kg', 'Daging', 0, 5, 35000, 'Supplier A'),
+  ('Jamur Enoki', 'pack', 'Sayur', 0, 10, 6000, 'Pasar'),
+  ('Tusuk Sate', 'pack', 'Lainnya', 0, 5, 15000, 'Toko Plastik'),
+  ('Arang', 'kg', 'Lainnya', 0, 10, 12000, 'Supplier B')
+on conflict do nothing;

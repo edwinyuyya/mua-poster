@@ -5,6 +5,11 @@ export const dynamic = 'force-dynamic';
 export default function Home() {
   const links = [
     {
+      href: '/owner',
+      title: '📊 Dashboard Owner',
+      desc: 'Pantau omzet, pembayaran, per station, menu terlaris & stok menipis.',
+    },
+    {
       href: '/kitchen',
       title: '🍳 Kitchen Display',
       desc: 'Tiket masuk per station (Shaokao, Maincourse, Bar) + cetak 1 printer.',
@@ -13,6 +18,11 @@ export default function Home() {
       href: '/cashier',
       title: '💵 Kasir',
       desc: 'Daftar bill, tandai lunas (QRIS / tunai), tutup meja.',
+    },
+    {
+      href: '/stok',
+      title: '📦 Stok & Belanja',
+      desc: 'Update stok saat barang datang (tap / scan barcode), opname, low-stock.',
     },
     {
       href: '/admin',

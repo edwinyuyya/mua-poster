@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
+import PinGate from '../components/PinGate';
 
 function rupiah(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
 }
 
-export default function CashierPage() {
+function CashierPage() {
   const [orders, setOrders] = useState([]);
   const [items, setItems] = useState({});
   const [tab, setTab] = useState('active'); // active | closed
@@ -128,5 +129,13 @@ export default function CashierPage() {
         })}
       </div>
     </div>
+  );
+}
+
+export default function CashierGated() {
+  return (
+    <PinGate scope="staff" title="Masuk Staf">
+      <CashierPage />
+    </PinGate>
   );
 }

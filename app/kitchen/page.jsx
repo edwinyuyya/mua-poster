@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
+import PinGate from '../components/PinGate';
 
 const STATIONS = [
   { id: 'shaokao', name: 'Shaokao', cls: 'station-shaokao' },
@@ -17,7 +18,7 @@ function timeAgo(ts) {
   return `${m}m lalu`;
 }
 
-export default function KitchenPage() {
+function KitchenPage() {
   const [orders, setOrders] = useState([]);
   const [pendingPrints, setPendingPrints] = useState({}); // order_id -> print_job
   const [stationFilter, setStationFilter] = useState('all');
@@ -193,5 +194,13 @@ export default function KitchenPage() {
         })}
       </div>
     </div>
+  );
+}
+
+export default function KitchenGated() {
+  return (
+    <PinGate scope="staff" title="Masuk Staf">
+      <KitchenPage />
+    </PinGate>
   );
 }

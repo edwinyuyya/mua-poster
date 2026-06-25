@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
+import PinGate from '../components/PinGate';
 
 function rupiah(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
@@ -11,7 +12,7 @@ function randToken(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export default function AdminPage() {
+function AdminPage() {
   const [tab, setTab] = useState('tables');
   const [stations, setStations] = useState([]);
   const [tables, setTables] = useState([]);
@@ -207,5 +208,13 @@ function MenuTab({ items, categories, stations, reload }) {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function AdminGated() {
+  return (
+    <PinGate scope="staff" title="Masuk Staf">
+      <AdminPage />
+    </PinGate>
   );
 }
