@@ -198,7 +198,7 @@ function EditModal({ item, onClose, reload }) {
     setBusy(true);
     await fetch(`/api/inventory/${item.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: f.name, unit: f.unit, category: f.category, min_stock: f.min_stock, cost_price: f.cost_price, supplier: f.supplier, barcode: f.barcode, expiry_date: f.expiry_date || '' }),
+      body: JSON.stringify({ name: f.name, unit: f.unit, category: f.category, min_stock: f.min_stock, cost_price: f.cost_price, supplier: f.supplier, barcode: f.barcode, expiry_date: f.expiry_date || '', shelf_life_days: f.shelf_life_days ?? '' }),
     });
     await reload(); setBusy(false); onClose();
   }
@@ -218,7 +218,11 @@ function EditModal({ item, onClose, reload }) {
           </div>
           <input className="input" placeholder="Supplier" value={f.supplier || ''} onChange={(e) => setF({ ...f, supplier: e.target.value })} />
           <input className="input" placeholder="Barcode (opsional)" value={f.barcode || ''} onChange={(e) => setF({ ...f, barcode: e.target.value })} />
-          <label className="muted small">Tanggal kadaluarsa<input className="input" type="date" value={f.expiry_date ? String(f.expiry_date).slice(0, 10) : ''} onChange={(e) => setF({ ...f, expiry_date: e.target.value })} /></label>
+          <div className="row">
+            <label className="muted small" style={{ flex: 1 }}>Tanggal kadaluarsa<input className="input" type="date" value={f.expiry_date ? String(f.expiry_date).slice(0, 10) : ''} onChange={(e) => setF({ ...f, expiry_date: e.target.value })} /></label>
+            <label className="muted small" style={{ flex: 1 }}>Masa simpan (hari)<input className="input" type="number" placeholder="auto" value={f.shelf_life_days ?? ''} onChange={(e) => setF({ ...f, shelf_life_days: e.target.value })} /></label>
+          </div>
+          <p className="muted small" style={{ margin: 0 }}>Kosongkan keduanya → sistem estimasi otomatis dari tanggal barang datang.</p>
         </div>
         <div className="row" style={{ marginTop: 12 }}>
           <button className="btn btn-brand btn-block" disabled={busy} onClick={save}>Simpan</button>

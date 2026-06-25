@@ -10,12 +10,13 @@ export async function PATCH(req, { params }) {
   let b;
   try { b = await req.json(); } catch { return NextResponse.json({ error: 'Body tidak valid' }, { status: 400 }); }
   const patch = {};
-  ['name', 'unit', 'category', 'supplier', 'barcode', 'expiry_date'].forEach((k) => {
+  ['name', 'unit', 'category', 'supplier', 'barcode', 'expiry_date', 'received_date'].forEach((k) => {
     if (b[k] !== undefined) patch[k] = b[k] === '' ? null : b[k];
   });
   ['min_stock', 'cost_price'].forEach((k) => {
     if (b[k] !== undefined) patch[k] = Number(b[k]) || 0;
   });
+  if (b.shelf_life_days !== undefined) patch.shelf_life_days = b.shelf_life_days === '' ? null : Number(b.shelf_life_days);
   if (Object.keys(patch).length === 0) return NextResponse.json({ error: 'Tidak ada perubahan' }, { status: 400 });
   const { data, error } = await db.from('inventory_items').update(patch).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: 'Gagal memperbarui' }, { status: 500 });

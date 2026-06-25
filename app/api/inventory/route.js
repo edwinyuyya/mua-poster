@@ -20,6 +20,8 @@ export async function POST(req) {
   let b;
   try { b = await req.json(); } catch { return NextResponse.json({ error: 'Body tidak valid' }, { status: 400 }); }
   if (!b.name || !String(b.name).trim()) return NextResponse.json({ error: 'Nama wajib' }, { status: 400 });
+  const wib = new Date(Date.now() + 7 * 3600 * 1000);
+  const today = `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
   const { data, error } = await db
     .from('inventory_items')
     .insert({
@@ -32,6 +34,8 @@ export async function POST(req) {
       supplier: b.supplier || null,
       barcode: b.barcode ? String(b.barcode).trim() : null,
       expiry_date: b.expiry_date || null,
+      shelf_life_days: b.shelf_life_days ? Number(b.shelf_life_days) : null,
+      received_date: Number(b.stock_qty) > 0 ? today : null,
     })
     .select()
     .single();

@@ -43,7 +43,10 @@ export default function AlertsPanel({ compact = false }) {
           const l = expLabel(i.days_left);
           return (
             <div key={i.id} className="between" style={{ marginBottom: 6 }}>
-              <span>{i.name} <span className="muted small">· {Number(i.stock_qty)} {i.unit}</span></span>
+              <span>
+                {i.name} <span className="muted small">· {Number(i.stock_qty)} {i.unit}</span>
+                {i.estimated && <span className="muted small" title={i.basis || ''}> · estimasi</span>}
+              </span>
               <span className={`badge ${l.cls}`}>{l.text}</span>
             </div>
           );

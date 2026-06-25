@@ -3,6 +3,11 @@ import { supabaseServer } from '../../../lib/supabaseServer';
 
 export const dynamic = 'force-dynamic';
 
+function todayWIB() {
+  const wib = new Date(Date.now() + 7 * 3600 * 1000);
+  return `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
+}
+
 // POST /api/stock
 //  { action: 'receive', items: [{item_id, qty, cost_price?}] }  -> barang datang (in)
 //  { action: 'adjust', item_id, mode:'out'|'set', qty, note }   -> pemakaian / opname
@@ -24,9 +29,9 @@ export async function POST(req) {
       const qty = Number(r.qty);
       const cost = (Number(r.cost_price) || Number(it.cost_price) || 0) * qty;
       moves.push({ item_id: r.item_id, type: 'in', qty, cost, note: b.note || 'Barang datang' });
-      const patch = { stock_qty: Number(it.stock_qty || 0) + qty };
+      const patch = { stock_qty: Number(it.stock_qty || 0) + qty, received_date: todayWIB() };
       if (r.cost_price !== undefined && r.cost_price !== '' && Number(r.cost_price) >= 0) patch.cost_price = Number(r.cost_price);
-      if (r.expiry_date) patch.expiry_date = r.expiry_date; // tanggal kadaluarsa batch ini
+      if (r.expiry_date) patch.expiry_date = r.expiry_date; // tanggal kadaluarsa batch ini (jika diisi)
       await db.from('inventory_items').update(patch).eq('id', r.item_id);
     }
     if (moves.length) await db.from('stock_movements').insert(moves);
