@@ -113,6 +113,17 @@ begin
   end loop;
 end $$;
 
+-- Beri izin akses ke role Data API (anon & authenticated).
+-- WAJIB: tanpa GRANT ini, PostgREST menyembunyikan tabel -> error 404.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on all tables in schema public to anon, authenticated;
+grant usage, select, update on all sequences in schema public to anon, authenticated;
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to anon, authenticated;
+alter default privileges in schema public
+  grant usage, select, update on sequences to anon, authenticated;
+notify pgrst, 'reload schema';
+
 -- ============================================================
 --  SEED DATA (3 station + contoh menu)
 -- ============================================================
@@ -211,3 +222,7 @@ insert into inventory_items (name, unit, category, stock_qty, min_stock, cost_pr
   ('Tusuk Sate', 'pack', 'Lainnya', 0, 5, 15000, 'Toko Plastik'),
   ('Arang', 'kg', 'Lainnya', 0, 10, 12000, 'Supplier B')
 on conflict do nothing;
+
+-- Pastikan tabel inventory juga punya izin Data API + refresh sekali lagi.
+grant select, insert, update, delete on inventory_items, stock_movements to anon, authenticated;
+notify pgrst, 'reload schema';
