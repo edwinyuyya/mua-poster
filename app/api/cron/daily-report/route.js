@@ -66,5 +66,36 @@ export async function GET(req) {
   }
 
   const sent = await sendNotif(msg);
-  return NextResponse.json({ ok: true, sent, revenue, orders: live.length, voids: cancelled.length, message: msg });
+
+  // Mode debug: /api/cron/daily-report?key=...&debug=1
+  // Menampilkan apakah env terbaca server + respons mentah Telegram (tanpa bocorkan nilai).
+  const debug = new URL(req.url).searchParams.get('debug') === '1';
+  let dbg;
+  if (debug) {
+    dbg = {
+      env_seen: {
+        telegram: !!process.env.TELEGRAM_BOT_TOKEN && !!process.env.TELEGRAM_CHAT_ID,
+        token_len: (process.env.TELEGRAM_BOT_TOKEN || '').length,
+        chat: process.env.TELEGRAM_CHAT_ID || null,
+        callmebot: !!process.env.CALLMEBOT_APIKEY,
+        fonnte: !!process.env.FONNTE_TOKEN,
+        webhook: !!process.env.ALERT_WEBHOOK_URL,
+      },
+    };
+    if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+      try {
+        const r = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: '🔎 Debug test dari server BBQIU' }),
+        });
+        dbg.telegram_status = r.status;
+        dbg.telegram_body = (await r.text()).slice(0, 300);
+      } catch (e) {
+        dbg.telegram_error = String(e).slice(0, 300);
+      }
+    }
+  }
+
+  return NextResponse.json({ ok: true, sent, revenue, orders: live.length, voids: cancelled.length, debug: dbg, message: msg });
 }
