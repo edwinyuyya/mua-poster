@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../../lib/supabaseServer';
 import { computeAlerts, formatAlertMessage } from '../../../../lib/alerts';
+import { sendNotif } from '../../../../lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,22 +26,11 @@ export async function GET(req) {
   const message = formatAlertMessage(alerts, merchant);
 
   let sent = false;
-  const hook = process.env.ALERT_WEBHOOK_URL;
-  if (hook && message) {
-    try {
-      await fetch(hook, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: message, content: message }), // text=Slack, content=Discord
-      });
-      sent = true;
-    } catch {}
-  }
+  if (message) sent = await sendNotif(message);
 
   return NextResponse.json({
     ok: true,
     sent,
-    has_webhook: !!hook,
     near_expiry: alerts.near_expiry.length,
     low_stock: alerts.low_stock.length,
     message,

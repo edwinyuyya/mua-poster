@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '../../../../lib/supabaseServer';
+import { sendNotif, rupiahWA } from '../../../../lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,6 +70,20 @@ export async function PATCH(req, { params }) {
     .single();
   if (error)
     return NextResponse.json({ error: 'Gagal memperbarui' }, { status: 500 });
+
+  // Notifikasi real-time ke WA saat ada pembatalan (void) — titik rawan.
+  if (data && data.status === 'cancelled') {
+    const merchant = process.env.NEXT_PUBLIC_MERCHANT_NAME || 'Restoran';
+    const msg =
+      `🚫 *VOID NOTA* — ${merchant}\n` +
+      `Bill #${data.order_no} · Meja ${data.table_number}\n` +
+      `Nilai: ${rupiahWA(data.total)}${data.payment_status === 'paid' ? ' (SUDAH LUNAS!)' : ''}\n` +
+      `Alasan: ${data.void_reason || '-'}\n` +
+      `Oleh: ${data.voided_by || '-'}\n` +
+      `Waktu: ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`;
+    // jangan tunggu (fire-and-forget) agar respons cepat
+    sendNotif(msg);
+  }
 
   return NextResponse.json({ ok: true, order: data });
 }
