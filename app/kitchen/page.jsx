@@ -199,7 +199,7 @@ function KitchenPage() {
 
 export default function KitchenGated() {
   return (
-    <PinGate scope="staff" title="Masuk Staf">
+    <PinGate scope="dapur" title="Masuk Dapur">
       <KitchenPage />
     </PinGate>
   );

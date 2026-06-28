@@ -277,7 +277,7 @@ function AddItem({ reload, onDone }) {
 
 export default function StokPage() {
   return (
-    <PinGate scope="staff" title="Masuk Staf">
+    <PinGate scope="stok" title="Masuk Gudang/Stok">
       <StokInner />
     </PinGate>
   );

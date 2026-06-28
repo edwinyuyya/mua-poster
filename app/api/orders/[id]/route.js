@@ -46,6 +46,14 @@ export async function PATCH(req, { params }) {
   if (['open', 'preparing', 'served', 'closed', 'cancelled'].includes(body.status)) {
     patch.status = body.status;
     if (body.status === 'closed') patch.closed_at = new Date().toISOString();
+    if (body.status === 'cancelled') {
+      patch.cancelled_at = new Date().toISOString();
+      patch.void_reason = (body.void_reason || '').toString().slice(0, 300) || null;
+      patch.voided_by = (body.voided_by || '').toString().slice(0, 80) || null;
+      if (body.void_photo && typeof body.void_photo === 'string' && body.void_photo.startsWith('data:image')) {
+        patch.void_photo = body.void_photo;
+      }
+    }
   }
   if (['qris', 'cashier'].includes(body.payment_method))
     patch.payment_method = body.payment_method;

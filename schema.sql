@@ -60,8 +60,18 @@ create table if not exists orders (
   note           text,
   created_at     timestamptz default now(),
   paid_at        timestamptz,
-  closed_at      timestamptz
+  closed_at      timestamptz,
+  cancelled_at   timestamptz,               -- waktu pembatalan (void)
+  void_reason    text,                       -- alasan pembatalan
+  voided_by      text,                       -- nama/inisial petugas yang membatalkan
+  void_photo     text                        -- foto wajah petugas saat void (data URL)
 );
+
+-- untuk database yang sudah ada (aman dijalankan ulang):
+alter table orders add column if not exists cancelled_at timestamptz;
+alter table orders add column if not exists void_reason text;
+alter table orders add column if not exists voided_by text;
+alter table orders add column if not exists void_photo text;
 
 -- ---------- ITEM PADA ORDER ----------
 create table if not exists order_items (
@@ -223,6 +233,23 @@ insert into inventory_items (name, unit, category, stock_qty, min_stock, cost_pr
   ('Arang', 'kg', 'Lainnya', 0, 10, 12000, 'Supplier B')
 on conflict do nothing;
 
--- Pastikan tabel inventory juga punya izin Data API + refresh sekali lagi.
-grant select, insert, update, delete on inventory_items, stock_movements to anon, authenticated;
+-- ============================================================
+--  PENUTUPAN KASIR / AKHIR SHIFT (dengan foto wajah - keamanan)
+-- ============================================================
+create table if not exists cashier_closures (
+  id          uuid default gen_random_uuid() primary key,
+  closed_by   text,                  -- nama/inisial kasir
+  cash_total  numeric,               -- total uang kas di laci (opsional)
+  note        text,
+  photo       text,                  -- foto wajah kasir saat tutup (data URL)
+  created_at  timestamptz default now()
+);
+create index if not exists idx_closures_date on cashier_closures(created_at);
+
+alter table cashier_closures enable row level security;
+drop policy if exists "allow all cashier_closures" on cashier_closures;
+create policy "allow all cashier_closures" on cashier_closures for all using (true) with check (true);
+
+-- Pastikan tabel baru punya izin Data API + refresh sekali lagi.
+grant select, insert, update, delete on inventory_items, stock_movements, cashier_closures to anon, authenticated;
 notify pgrst, 'reload schema';

@@ -6,6 +6,15 @@ import PinGate from '../components/PinGate';
 import AlertsPanel from '../components/AlertsPanel';
 
 function rupiah(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); }
+function jamWIB(iso) {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleString('id-ID', {
+      timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short',
+      hour: '2-digit', minute: '2-digit',
+    });
+  } catch { return ''; }
+}
 
 const STATIONS = [
   { id: 'shaokao', name: 'Shaokao' },
@@ -65,6 +74,7 @@ function OwnerInner() {
             {stat('Total order', data.orders_count, `${data.unpaid_count} belum bayar`)}
             {stat('Rata-rata/order', rupiah(data.avg_order))}
             {stat('Belanja hari ini', rupiah(data.purchase_value))}
+            {data.voids && stat('Void / Batal', `${data.voids.count}×`, rupiah(data.voids.value))}
           </div>
 
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', marginTop: 12 }}>
@@ -111,6 +121,66 @@ function OwnerInner() {
               ))}
             </div>
           </div>
+
+          {data.voids && (
+            <div className="card" style={{ marginTop: 12, borderColor: data.voids.count ? 'var(--red)' : 'var(--line)' }}>
+              <div className="between" style={{ marginBottom: 10 }}>
+                <div className="h2">🚫 Void / Pembatalan Nota</div>
+                <span className="badge badge-red">{data.voids.count}× · {rupiah(data.voids.value)}</span>
+              </div>
+              {data.voids.count === 0 && <p className="muted small" style={{ margin: 0 }}>Tidak ada pembatalan ✓</p>}
+              <div className="col" style={{ gap: 10 }}>
+                {data.voids.list.map((v, i) => (
+                  <div key={i} className="between" style={{ alignItems: 'flex-start', gap: 10, borderBottom: '1px solid var(--line)', paddingBottom: 8 }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      {v.photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={v.photo} alt="Foto void" style={{ width: 54, height: 54, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }} />
+                      ) : (
+                        <div style={{ width: 54, height: 54, borderRadius: 8, background: 'var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>👤</div>
+                      )}
+                      <div>
+                        <div className="bold">#{v.order_no} · Meja {v.table_number} {v.was_paid && <span className="badge badge-amber" style={{ marginLeft: 4 }}>sudah lunas!</span>}</div>
+                        <div className="muted small">{v.void_reason || '(tanpa alasan)'}</div>
+                        <div className="muted small">oleh {v.voided_by || '—'} · {jamWIB(v.at)}</div>
+                      </div>
+                    </div>
+                    <span className="bold" style={{ color: '#ff8585', whiteSpace: 'nowrap' }}>{rupiah(v.total)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.closures && (
+            <div className="card" style={{ marginTop: 12 }}>
+              <div className="between" style={{ marginBottom: 10 }}>
+                <div className="h2">🔒 Penutupan Kasir</div>
+                <span className="badge">{data.closures.length}×</span>
+              </div>
+              {data.closures.length === 0 && <p className="muted small" style={{ margin: 0 }}>Belum ada penutupan kasir.</p>}
+              <div className="col" style={{ gap: 10 }}>
+                {data.closures.map((c, i) => (
+                  <div key={i} className="between" style={{ alignItems: 'flex-start', gap: 10, borderBottom: '1px solid var(--line)', paddingBottom: 8 }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      {c.photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.photo} alt="Foto tutup kasir" style={{ width: 54, height: 54, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }} />
+                      ) : (
+                        <div style={{ width: 54, height: 54, borderRadius: 8, background: 'var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>👤</div>
+                      )}
+                      <div>
+                        <div className="bold">{c.closed_by || '—'}</div>
+                        {c.note && <div className="muted small">{c.note}</div>}
+                        <div className="muted small">{jamWIB(c.at)}</div>
+                      </div>
+                    </div>
+                    {c.cash_total != null && <span className="bold" style={{ whiteSpace: 'nowrap' }}>{rupiah(c.cash_total)}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

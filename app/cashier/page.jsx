@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import PinGate from '../components/PinGate';
+import FaceCapture from '../components/FaceCapture';
 
 function rupiah(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
@@ -15,6 +16,7 @@ function CashierPage() {
   const [tab, setTab] = useState('active'); // active | closed
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
+  const [cap, setCap] = useState(null); // { mode:'void'|'close', title, onPhoto }
 
   const load = useCallback(async () => {
     const statuses = tab === 'active'
@@ -57,6 +59,55 @@ function CashierPage() {
     setBusy('');
   }
 
+  // Void/batalkan bill: wajib isi alasan + nama petugas + FOTO WAJAH (anti-curang)
+  async function voidBill(o) {
+    const reason = prompt(`Batalkan bill #${o.order_no} (Meja ${o.table_number}, ${rupiah(o.total)}).\n\nAlasan pembatalan:`);
+    if (reason === null) return; // batal
+    if (!reason.trim()) { alert('Alasan wajib diisi.'); return; }
+    const by = prompt('Nama/inisial petugas yang membatalkan:') || '';
+    // buka kamera; setelah foto diambil, baru proses pembatalan
+    setCap({
+      mode: 'void',
+      title: 'Foto Wajah — Pembatalan',
+      onPhoto: async (photo) => {
+        await patch(o.id, { status: 'cancelled', void_reason: reason.trim(), voided_by: by.trim(), void_photo: photo });
+      },
+    });
+  }
+
+  // Tutup kasir / akhir shift: wajib foto wajah + hitung kas (untuk pantauan owner)
+  async function closeShift() {
+    const by = prompt('Nama/inisial kasir yang menutup shift:') || '';
+    if (!by.trim()) { alert('Nama kasir wajib diisi.'); return; }
+    const cashStr = prompt('Total uang kas di laci (Rp), kosongkan jika tidak dihitung:') || '';
+    const note = prompt('Catatan (opsional):') || '';
+    setCap({
+      mode: 'close',
+      title: 'Foto Wajah — Tutup Kasir',
+      onPhoto: async (photo) => {
+        setBusy('close');
+        await fetch('/api/cashier/close', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            closed_by: by.trim(),
+            cash_total: cashStr.replace(/[^0-9]/g, '') || null,
+            note: note.trim(),
+            photo,
+          }),
+        });
+        setBusy('');
+        alert('Kasir berhasil ditutup. Tercatat di Dashboard Owner.');
+      },
+    });
+  }
+
+  async function onPhotoTaken(photo) {
+    const fn = cap?.onPhoto;
+    setCap(null);
+    if (fn) await fn(photo);
+  }
+
   return (
     <div className="container">
       <div className="between" style={{ padding: '16px 0' }}>
@@ -64,13 +115,23 @@ function CashierPage() {
           <h1 className="title">💵 Kasir</h1>
           <p className="muted small">Konfirmasi pembayaran &amp; tutup bill</p>
         </div>
-        <Link href="/" className="btn">← Beranda</Link>
+        <div className="row">
+          <button className="btn" disabled={busy === 'close'} onClick={closeShift}>🔒 Tutup Kasir</button>
+          <Link href="/" className="btn">← Beranda</Link>
+        </div>
       </div>
 
       <div className="row" style={{ marginBottom: 14 }}>
         <button className={`btn ${tab === 'active' ? 'btn-brand' : ''}`} onClick={() => setTab('active')}>Aktif</button>
         <button className={`btn ${tab === 'closed' ? 'btn-brand' : ''}`} onClick={() => setTab('closed')}>Selesai</button>
       </div>
+
+      <FaceCapture
+        open={!!cap}
+        title={cap?.title}
+        onCapture={onPhotoTaken}
+        onCancel={() => setCap(null)}
+      />
 
       {loading && <p className="muted">Memuat…</p>}
       {!loading && orders.length === 0 && (
@@ -106,6 +167,13 @@ function CashierPage() {
               <hr className="hr" />
               <div className="between"><span className="bold">Total</span><span className="bold">{rupiah(o.total)}</span></div>
 
+              {o.status === 'cancelled' && (
+                <div className="small" style={{ marginTop: 8, color: '#ff8585' }}>
+                  ✖ Dibatalkan{o.voided_by ? ` oleh ${o.voided_by}` : ''}
+                  {o.void_reason ? ` — "${o.void_reason}"` : ''}
+                </div>
+              )}
+
               {tab === 'active' && (
                 <div className="col no-print" style={{ marginTop: 12, gap: 8 }}>
                   {!paid && (
@@ -117,7 +185,7 @@ function CashierPage() {
                     <button className="btn btn-block" disabled={busy === o.id} onClick={() => patch(o.id, { status: 'closed' })}>
                       Tutup Bill
                     </button>
-                    <button className="btn btn-block" disabled={busy === o.id} onClick={() => patch(o.id, { status: 'cancelled' })}>
+                    <button className="btn btn-block" disabled={busy === o.id} onClick={() => voidBill(o)}>
                       Batalkan
                     </button>
                   </div>
@@ -134,7 +202,7 @@ function CashierPage() {
 
 export default function CashierGated() {
   return (
-    <PinGate scope="staff" title="Masuk Staf">
+    <PinGate scope="kasir" title="Masuk Kasir">
       <CashierPage />
     </PinGate>
   );

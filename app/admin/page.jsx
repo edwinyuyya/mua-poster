@@ -216,7 +216,7 @@ function MenuTab({ items, categories, stations, reload }) {
 
 export default function AdminGated() {
   return (
-    <PinGate scope="staff" title="Masuk Staf">
+    <PinGate scope="admin" title="Masuk Admin">
       <AdminPage />
     </PinGate>
   );
