@@ -136,8 +136,36 @@ function TablesTab({ tables, origin, reload }) {
 function MenuTab({ items, categories, stations, reload }) {
   const [form, setForm] = useState({ name: '', price: '', category_id: '', station_id: '', description: '' });
   const [busy, setBusy] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', price: '', category_id: '', station_id: '', description: '' });
 
   const catById = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c])), [categories]);
+
+  function startEdit(it) {
+    setEditId(it.id);
+    setEditForm({
+      name: it.name || '',
+      price: it.price ?? '',
+      category_id: it.category_id || '',
+      station_id: it.station_id || '',
+      description: it.description || '',
+    });
+  }
+  async function saveEdit(it) {
+    if (!editForm.name.trim() || editForm.price === '') return;
+    setBusy(true);
+    const station = editForm.station_id || (editForm.category_id ? catById[editForm.category_id]?.station_id : null) || null;
+    await supabase.from('menu_items').update({
+      name: editForm.name.trim(),
+      price: Number(editForm.price),
+      description: editForm.description.trim() || null,
+      category_id: editForm.category_id || null,
+      station_id: station,
+    }).eq('id', it.id);
+    setEditId(null);
+    await reload();
+    setBusy(false);
+  }
 
   async function addItem() {
     if (!form.name.trim() || !form.price) return;
@@ -192,21 +220,46 @@ function MenuTab({ items, categories, stations, reload }) {
       <div className="col">
         {items.map((it) => (
           <div key={it.id} className="card">
-            <div className="between">
-              <div>
-                <span className="bold">{it.name}</span> · {rupiah(it.price)}
-                {it.description && <div className="muted small">{it.description}</div>}
+            {editId === it.id ? (
+              <div className="col">
+                <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                  <input className="input" placeholder="Nama menu" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                  <input className="input" type="number" placeholder="Harga" value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: e.target.value })} />
+                  <select className="select" value={editForm.category_id} onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}>
+                    <option value="">— Kategori —</option>
+                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  <select className="select" value={editForm.station_id} onChange={(e) => setEditForm({ ...editForm, station_id: e.target.value })}>
+                    <option value="">Station: ikut kategori</option>
+                    {stations.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <input className="input" placeholder="Deskripsi (opsional)" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+                <div className="row">
+                  <button className="btn btn-brand" disabled={busy} onClick={() => saveEdit(it)}>Simpan</button>
+                  <button className="btn" onClick={() => setEditId(null)}>Batal</button>
+                </div>
               </div>
-              <span className={`badge ${it.available ? 'badge-green' : 'badge-red'}`}>{it.available ? 'Tersedia' : 'Habis'}</span>
-            </div>
-            <div className="row no-print" style={{ marginTop: 10, flexWrap: 'wrap' }}>
-              <select className="select" style={{ width: 'auto' }} value={it.station_id || ''} onChange={(e) => setStation(it, e.target.value)}>
-                <option value="">Tanpa station</option>
-                {stations.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-              <button className="btn" style={{ padding: '6px 10px', fontSize: 13 }} onClick={() => toggle(it)}>{it.available ? 'Set habis' : 'Set tersedia'}</button>
-              <button className="btn" style={{ padding: '6px 10px', fontSize: 13 }} onClick={() => del(it)}>Hapus</button>
-            </div>
+            ) : (
+              <>
+                <div className="between">
+                  <div>
+                    <span className="bold">{it.name}</span> · {rupiah(it.price)}
+                    {it.description && <div className="muted small">{it.description}</div>}
+                  </div>
+                  <span className={`badge ${it.available ? 'badge-green' : 'badge-red'}`}>{it.available ? 'Tersedia' : 'Habis'}</span>
+                </div>
+                <div className="row no-print" style={{ marginTop: 10, flexWrap: 'wrap' }}>
+                  <select className="select" style={{ width: 'auto' }} value={it.station_id || ''} onChange={(e) => setStation(it, e.target.value)}>
+                    <option value="">Tanpa station</option>
+                    {stations.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                  <button className="btn btn-brand" style={{ padding: '6px 10px', fontSize: 13 }} onClick={() => startEdit(it)}>✏️ Edit</button>
+                  <button className="btn" style={{ padding: '6px 10px', fontSize: 13 }} onClick={() => toggle(it)}>{it.available ? 'Set habis' : 'Set tersedia'}</button>
+                  <button className="btn" style={{ padding: '6px 10px', fontSize: 13 }} onClick={() => del(it)}>Hapus</button>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
