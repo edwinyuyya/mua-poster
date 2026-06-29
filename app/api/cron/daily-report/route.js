@@ -66,26 +66,5 @@ export async function GET(req) {
   }
 
   const sent = await sendNotif(msg);
-
-  // Diagnosa selalu tampil (tanpa bocorkan nilai env) supaya mudah dicek.
-  const diag = {
-    TELEGRAM_terbaca_server: !!process.env.TELEGRAM_BOT_TOKEN && !!process.env.TELEGRAM_CHAT_ID,
-    panjang_token: (process.env.TELEGRAM_BOT_TOKEN || '').length,
-    chat_id: process.env.TELEGRAM_CHAT_ID || null,
-  };
-  if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
-    try {
-      const r = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: '🔎 Tes dari server BBQIU — kalau ini masuk, notifikasi AKTIF!' }),
-      });
-      diag.telegram_status = r.status;
-      diag.telegram_jawaban = (await r.text()).slice(0, 200);
-    } catch (e) {
-      diag.telegram_gagal = String(e).slice(0, 200);
-    }
-  }
-
-  return NextResponse.json({ sent, diagnosa: diag, message: msg });
+  return NextResponse.json({ ok: true, sent, revenue, orders: live.length, voids: cancelled.length, message: msg });
 }
